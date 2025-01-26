@@ -1,25 +1,34 @@
-# meta developer: your_username
+# meta developer: @Vamics
 # meta pic: https://hikka.userpic/url
 # meta banner: https://hikka.banner/url
 
 import json
 import os
 import sys
-from datetime import datetime, timedelta
 import httpx
+from datetime import datetime, timedelta
 from .. import loader, utils
 
 # Путь к файлу настроек
 SETTINGS_FILE = "auto_reply_settings.json"
 
 # URL репозитория и путь к файлу скрипта на GitHub
-GITHUB_REPO = "your-username/your-repo"
+GITHUB_REPO = "Xz/auto_reply"
 SCRIPT_PATH = "auto_reply.py"
 
 
 class AutoReplyMod(loader.Module):
     """Автоответчик с настройкой кулдауна, текста и автоматическим обновлением"""
-    strings = {"name": "AutoReply"}
+    strings = {
+        "name": "AutoReply",
+        "menu": "Меню автоответчика",
+        "current_settings": "Текущие настройки автоответчика:",
+        "cooldown_label": "Кулдаун: ",
+        "message_label": "Текст автоответа: ",
+        "change_cooldown": "Установить кулдаун (секунды)",
+        "change_message": "Установить текст автоответа",
+        "check_update": "Проверить обновления скрипта"
+    }
 
     async def client_ready(self, client, db):
         self.client = client
@@ -84,9 +93,9 @@ class AutoReplyMod(loader.Module):
     async def showsettings(self, message):
         """Показать текущие настройки"""
         await message.edit(
-            f"Текущие настройки:\n"
-            f"Кулдаун: {self.cooldown} секунд\n"
-            f"Текст автоответа: {self.auto_reply_message}"
+            f"{self.strings['current_settings']}\n"
+            f"{self.strings['cooldown_label']} {self.cooldown} секунд\n"
+            f"{self.strings['message_label']} {self.auto_reply_message}"
         )
 
     @loader.command()
@@ -147,3 +156,13 @@ class AutoReplyMod(loader.Module):
             reply = await message.reply(self.auto_reply_message)
             self.last_reply_ids[user_id] = reply.id  # Сохраняем ID нового автоответа
             self.cooldown_timers[user_id] = now
+
+    @loader.command()
+    async def menu(self, message):
+        """Показывает меню для управления автоответчиком"""
+        await message.edit(
+            f"{self.strings['menu']}\n\n"
+            f"1. {self.strings['change_cooldown']}\n"
+            f"2. {self.strings['change_message']}\n"
+            f"3. {self.strings['check_update']}\n"
+            )
