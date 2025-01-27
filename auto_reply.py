@@ -153,7 +153,7 @@ class AutoReplyMod(loader.Module):
     async def handle_update(self, latest_version):
         """Обрабатывает обновление, если версия изменена"""
         try:
-            url = f"https://raw.githubusercontent.com/i9opkas/Xz/main/auto_reply.py"
+            url = f"https://github.com/i9opkas/Xz/blob/main/auto_reply.py"
             response = requests.get(url)
             if response.status_code == 200:
                 with open(__file__, "w") as f:
