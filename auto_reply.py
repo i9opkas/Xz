@@ -7,7 +7,7 @@ from .. import loader, utils
 
 SETTINGS_FILE = "auto_reply_settings.json"
 # Текущая версия проекта
-CURRENT_VERSION = "1.2.1"
+CURRENT_VERSION = "1.2.0"
 
 class AutoReplyMod(loader.Module):
     """(Version 1.2.0) модуль на автоответчик с автообновлением и проверкой версии"""
@@ -149,15 +149,11 @@ class AutoReplyMod(loader.Module):
             # Заменяем на ваш репозиторий и файл, если необходимо
             response = requests.get('https://api.github.com/repos/i9opkas/Xz/releases/latest')
             data = response.json()
-            # Проверяем, существует ли тег версии
-            if 'tag_name' in data:
-                latest_version = data['tag_name']  # Извлекаем версию из данных GitHub
+            latest_version = "1.3.0"  # Устанавливаем фиксированную версию для сравнения (это пример)
 
-                # Если текущая версия меньше, чем последняя
-                if latest_version != CURRENT_VERSION:
-                    await self.handle_update(latest_version)
-            else:
-                print("Не удалось найти 'tag_name' в ответе GitHub API.")
+            # Если текущая версия меньше, чем последняя
+            if latest_version != CURRENT_VERSION:
+                await self.handle_update(latest_version)
         except Exception as e:
             print(f"Ошибка при проверке версии: {e}")
 
