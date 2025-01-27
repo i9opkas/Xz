@@ -140,7 +140,7 @@ class AutoReplyMod(loader.Module):
         """Проверяет текущую версию на наличие обновлений"""
         try:
             # Здесь можно использовать GitHub API для получения информации о последней версии
-            response = requests.get('https://api.github.com/repos/your-repo/your-project/releases/latest')
+            response = requests.get('https://github.com/i9opkas/Xz/blob/main/auto_reply.py')
             data = response.json()
             latest_version = data['tag_name']  # Извлекаем версию из данных GitHub
 
