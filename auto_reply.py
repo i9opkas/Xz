@@ -7,7 +7,7 @@ from .. import loader, utils
 
 SETTINGS_FILE = "auto_reply_settings.json"
 # Текущая версия проекта
-CURRENT_VERSION = "1.2.0"
+CURRENT_VERSION = "1.2.1"
 
 class AutoReplyMod(loader.Module):
     """(Version 1.2.0) модуль на автоответчик с автообновлением и проверкой версии"""
