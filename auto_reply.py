@@ -7,10 +7,10 @@ from .. import loader, utils
 
 SETTINGS_FILE = "auto_reply_settings.json"
 # Текущая версия проекта
-tag_name = "1.2.11"
+CURRENT_VERSION = "1.2.1"
 
 class AutoReplyMod(loader.Module):
-    """(Version 1.2.11) модуль на автоответчик с автообновлением и проверкой версии"""
+    """(Version 1.2.0) модуль на автоответчик с автообновлением и проверкой версии"""
     strings = {
         "name": "AutoReply",
         "current_settings": "Текущие настройки:",
@@ -19,7 +19,8 @@ class AutoReplyMod(loader.Module):
         "change_cooldown": "Установить кулдаун",
         "change_message": "Установить текст ",
         "cooldown_instruction": "Укажите кулдаун в секундах. Например: `.setcooldown 60` для установки кулдауна в 60 секунд.",
-        "message_instruction": "Укажите текст автоответа. Например: `.setmessage Привет, я не в сети сейчас не могу ответить`."
+        "message_instruction": "Укажите текст автоответа. Например: `.setmessage Привет, я не в сети сейчас не могу ответить`.",
+        "manual_check_version": "Вручную проверяем обновления..."
     }
 
     async def client_ready(self, client, db):
@@ -90,6 +91,12 @@ class AutoReplyMod(loader.Module):
             f"{self.strings['message_label']} {self.auto_reply_message}"
         )
 
+    @loader.command(ru_doc="Проверить доступность новой версии вручную")
+    async def check_version_manual(self, message):
+        """Команда для ручной проверки версии"""
+        await message.edit(self.strings["manual_check_version"])
+        await self.check_version()
+
     async def set_offline(self):
         """Сбрасывает статус аккаунта в оффлайн через 30 секунд после отправки сообщения"""
         await asyncio.sleep(30)  # 30 секунд
@@ -139,14 +146,18 @@ class AutoReplyMod(loader.Module):
     async def check_version(self):
         """Проверяет текущую версию на наличие обновлений"""
         try:
-            # Здесь можно использовать GitHub API для получения информации о последней версии
-            response = requests.get('https://github.com/i9opkas/Xz/blob/main/auto_reply.py')
+            # Заменяем на ваш репозиторий и файл, если необходимо
+            response = requests.get('https://api.github.com/repos/i9opkas/Xz/releases/latest')
             data = response.json()
-            latest_version = data['tag_name']  # Извлекаем версию из данных GitHub
+            # Проверяем, существует ли тег версии
+            if 'tag_name' in data:
+                latest_version = data['tag_name']  # Извлекаем версию из данных GitHub
 
-            # Если текущая версия меньше, чем последняя
-            if latest_version != CURRENT_VERSION:
-                await self.handle_update(latest_version)
+                # Если текущая версия меньше, чем последняя
+                if latest_version != CURRENT_VERSION:
+                    await self.handle_update(latest_version)
+            else:
+                print("Не удалось найти 'tag_name' в ответе GitHub API.")
         except Exception as e:
             print(f"Ошибка при проверке версии: {e}")
 
@@ -158,7 +169,7 @@ class AutoReplyMod(loader.Module):
     async def periodic_update(self):
         """Периодически проверяет наличие обновлений"""
         while True:
-            await asyncio.sleep(10)  # Проверка обновлений каждый час
+            await asyncio.sleep(3600)  # Проверка обновлений каждый час
             await self.check_version()
 
     async def main(self):
