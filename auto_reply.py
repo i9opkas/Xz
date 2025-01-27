@@ -7,10 +7,10 @@ from .. import loader, utils
 
 SETTINGS_FILE = "auto_reply_settings.json"
 # Текущая версия проекта
-CURRENT_VERSION = "1.2.1"
+CURRENT_VERSION = "1.2.3"
 
 class AutoReplyMod(loader.Module):
-    """(Version 1.2.0) модуль на автоответчик с автообновлением и проверкой версии"""
+    """(Version 1.2.3) модуль на автоответчик с автообновлением и проверкой версии"""
     strings = {
         "name": "AutoReply",
         "current_settings": "Текущие настройки:",
@@ -97,70 +97,32 @@ class AutoReplyMod(loader.Module):
         await message.edit(self.strings["manual_check_version"])
         await self.check_version()
 
-    async def set_offline(self):
-        """Сбрасывает статус аккаунта в оффлайн через 30 секунд после отправки сообщения"""
-        await asyncio.sleep(30)  # 30 секунд
-        self.is_online = False
-        print("[Статус] Аккаунт теперь оффлайн.")
-
-    async def watcher(self, message):
-        """Главный обработчик сообщений"""
-        if message.is_private:
-            sender = await message.get_sender()
-            user_id = sender.id
-            if user_id == self.my_id:  # Пропускаем сообщения от самого себя
-                return
-
-            # Удаляем старый автоответ, если он существует
-            if user_id in self.last_reply_ids:
-                try:
-                    # Используем тот же метод удаления, что и для старого автоответа
-                    await self.client.delete_messages(self.my_id, self.last_reply_ids[user_id])
-                    del self.last_reply_ids[user_id]
-                    print(f"[Автоответ] Старый автоответ удален для {sender.username or user_id}")
-                except Exception as e:
-                    print(f"Ошибка при удалении старого автоответа для {user_id}: {e}")
-
-            # Проверяем кулдаун
-            now = datetime.now()
-            last_reply_time = self.cooldown_timers.get(user_id)
-            if last_reply_time and now - last_reply_time < timedelta(seconds=self.cooldown):
-                print(f"[Кулдаун] Сообщение для {sender.username or user_id} отправлено недавно.")
-                return  # Не отправляем новый автоответ, если кулдаун ещё активен
-
-            # Если аккаунт не онлайн, то отправляем автоответ
-            if not self.is_online:
-                reply = await message.reply(self.auto_reply_message)
-                self.last_reply_ids[user_id] = reply.id  # Сохраняем ID нового автоответа
-                self.cooldown_timers[user_id] = now  # Обновляем время кулдауна
-                print(f"[Автоответ] Новый автоответ отправлен пользователю {sender.username or user_id}.")
-
-    async def client_outgoing_message(self, message):
-        """Обработчик исходящих сообщений для активации статуса онлайн"""
-        if message.sender.id == self.my_id:  # Если это наше сообщение
-            self.is_online = True
-            # Сбрасываем статус в оффлайн через 30 секунд
-            await self.set_offline()
-            print("[Статус] Аккаунт теперь онлайн.")
-
     async def check_version(self):
         """Проверяет текущую версию на наличие обновлений"""
         try:
-            # Заменяем на ваш репозиторий и файл, если необходимо
             response = requests.get('https://api.github.com/repos/i9opkas/Xz/releases/latest')
             data = response.json()
-            latest_version = "1.3.0"  # Устанавливаем фиксированную версию для сравнения (это пример)
+            latest_version = data.get("tag_name")
+            if not latest_version:
+                print("Не удалось найти 'tag_name' в ответе GitHub API.")
+                return
 
-            # Если текущая версия меньше, чем последняя
-            if latest_version != CURRENT_VERSION:
+            if self.compare_versions(CURRENT_VERSION, latest_version):
                 await self.handle_update(latest_version)
         except Exception as e:
             print(f"Ошибка при проверке версии: {e}")
 
     async def handle_update(self, latest_version):
         """Обрабатывает обновление, если версия изменена"""
-        await self.client.send_message(self.my_id, f"Новая версия ({latest_version}) доступна для обновления.\nПерезапустите Хикку для применения обновлений.")
-        print(f"Обновление доступно. Текущая версия: {CURRENT_VERSION}, новая версия: {latest_version}")
+        try:
+            # Загрузка файла обновления
+            response = requests.get("https://raw.githubusercontent.com/i9opkas/Xz/main/auto_reply.py")
+            with open(__file__, "w") as f:
+                f.write(response.text)
+            print(f"Модуль обновлен до версии {latest_version}. Требуется перезапуск Хикки.")
+            await self.client.send_message(self.my_id, f"Модуль обновлен до версии {latest_version}. Перезапустите Хикку для применения изменений.")
+        except Exception as e:
+            print(f"Ошибка при обновлении: {e}")
 
     async def periodic_update(self):
         """Периодически проверяет наличие обновлений"""
@@ -168,9 +130,14 @@ class AutoReplyMod(loader.Module):
             await asyncio.sleep(3600)  # Проверка обновлений каждый час
             await self.check_version()
 
-    async def main(self):
-        """Основная функция для запуска клиента и слушания сообщений"""
-        # Подключение и авторизация клиента
-        with self.client:
-            self.client.loop.run_until_complete(self.client.start())
-            self.client.loop.run_forever()
+    def compare_versions(self, current, latest):
+        """Сравнивает версии. Возвращает True, если текущая версия меньше новой."""
+        current_parts = list(map(int, current.split(".")))
+        latest_parts = list(map(int, latest.split(".")))
+
+        for c, l in zip(current_parts, latest_parts):
+            if c < l:
+                return True
+            elif c > l:
+                return False
+        return len(latest_parts) > len(current_parts)
