@@ -1,8 +1,6 @@
 # meta developer: @Vamics
 # meta pic: https://hikka.userpic/url
-# meta banner: https://hikka.banner/url
-
-import json
+# meta banner: https://hikka.banner/urlimport json
 import os
 import sys
 import httpx
@@ -13,7 +11,7 @@ from .. import loader, utils
 SETTINGS_FILE = "auto_reply_settings.json"
 
 # URL репозитория и путь к файлу скрипта на GitHub
-GITHUB_REPO = "Xz/auto_reply"
+GITHUB_REPO = "i9opkas/Xz"
 SCRIPT_PATH = "auto_reply.py"
 
 
@@ -21,13 +19,14 @@ class AutoReplyMod(loader.Module):
     """Автоответчик с настройкой кулдауна, текста и автоматическим обновлением"""
     strings = {
         "name": "AutoReply",
-        "menu": "Меню автоответчика",
         "current_settings": "Текущие настройки автоответчика:",
         "cooldown_label": "Кулдаун: ",
         "message_label": "Текст автоответа: ",
         "change_cooldown": "Установить кулдаун (секунды)",
         "change_message": "Установить текст автоответа",
-        "check_update": "Проверить обновления скрипта"
+        "check_update": "Проверить обновления скрипта",
+        "cooldown_instruction": "Укажите кулдаун в секундах. Например: `.setcooldown 60` для установки кулдауна в 60 секунд.",
+        "message_instruction": "Укажите текст автоответа. Например: `.setmessage Привет, я сейчас не могу ответить`."
     }
 
     async def client_ready(self, client, db):
@@ -42,7 +41,8 @@ class AutoReplyMod(loader.Module):
         self.last_reply_ids = {}
 
         # Получаем ID текущего аккаунта
-        self.my_id = (await self.client.get_me()).id
+        me = await self.client.get_me()
+        self.my_id = me.id
 
     async def _load_settings(self):
         """Загрузка настроек из файла"""
@@ -71,7 +71,10 @@ class AutoReplyMod(loader.Module):
     async def setcooldown(self, message):
         """Установить время кулдауна (в секундах)"""
         args = utils.get_args_raw(message)
-        if not args or not args.isdigit():
+        if not args:
+            await message.edit(self.strings["cooldown_instruction"])
+            return
+        if not args.isdigit():
             await message.edit("Введите корректное время кулдауна (число в секундах).")
             return
         self.cooldown = int(args)
@@ -83,7 +86,7 @@ class AutoReplyMod(loader.Module):
         """Установить текст автоответа"""
         args = utils.get_args_raw(message)
         if not args:
-            await message.edit("Введите текст автоответа.")
+            await message.edit(self.strings["message_instruction"])
             return
         self.auto_reply_message = args
         await self._save_settings()
@@ -132,8 +135,9 @@ class AutoReplyMod(loader.Module):
 
     async def watcher(self, message):
         """Главный обработчик сообщений"""
-        if message.is_private and not (await message.get_sender()).bot:
-            user_id = utils.get_chat_id(message)
+        if message.is_private:
+            sender = await message.get_sender()
+            user_id = sender.id
 
             # Проверяем, чтобы это не было сообщение от самого владельца аккаунта
             if user_id == self.my_id:
@@ -156,13 +160,3 @@ class AutoReplyMod(loader.Module):
             reply = await message.reply(self.auto_reply_message)
             self.last_reply_ids[user_id] = reply.id  # Сохраняем ID нового автоответа
             self.cooldown_timers[user_id] = now
-
-    @loader.command()
-    async def menu(self, message):
-        """Показывает меню для управления автоответчиком"""
-        await message.edit(
-            f"{self.strings['menu']}\n\n"
-            f"1. {self.strings['change_cooldown']}\n"
-            f"2. {self.strings['change_message']}\n"
-            f"3. {self.strings['check_update']}\n"
-            )
