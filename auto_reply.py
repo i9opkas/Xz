@@ -7,10 +7,10 @@ from .. import loader, utils
 
 SETTINGS_FILE = "auto_reply_settings.json"
 # Текущая версия проекта
-CURRENT_VERSION = "1.2.0"
+CURRENT_VERSION = "1.2.11"
 
 class AutoReplyMod(loader.Module):
-    """(Version 1.2.0) модуль на автоответчик с автообновлением и проверкой версии"""
+    """(Version 1.2.11) модуль на автоответчик с автообновлением и проверкой версии"""
     strings = {
         "name": "AutoReply",
         "current_settings": "Текущие настройки:",
@@ -158,7 +158,7 @@ class AutoReplyMod(loader.Module):
     async def periodic_update(self):
         """Периодически проверяет наличие обновлений"""
         while True:
-            await asyncio.sleep(3600)  # Проверка обновлений каждый час
+            await asyncio.sleep(10)  # Проверка обновлений каждый час
             await self.check_version()
 
     async def main(self):
